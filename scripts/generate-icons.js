@@ -1,0 +1,33 @@
+// PNG 图标生成脚本
+// 使用预制的 Base64 PNG 数据
+
+import { writeFileSync, mkdirSync, existsSync } from 'fs'
+import { join, dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const iconsDir = join(__dirname, '..', 'public', 'icons')
+
+if (!existsSync(iconsDir)) {
+  mkdirSync(iconsDir, { recursive: true })
+}
+
+// 预制的蓝色 M 图标 PNG (Base64)
+// 16x16
+const icon16 = 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAjUlEQVQ4y2NgGLTgPwMDA8N/BgYGhv8MDAwMDAwM/6H4PwMDw38GBgYG+gaA/B8gBon9B2JQoPxHF/8PxCDxfwwMDAxQl/wHi/9nYGD4D8L/GRgYGBgYGBj+g/B/BgYGhv8gGiT+nwHJAJhLQADVAKgL/kNdBBL/DxJkgBr8H+QikDhIjAFqGMQlDMgAAOqYXevQrfpPAAAAAElFTkSuQmCC'
+
+// 48x48
+const icon48 = 'iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAACXBIWXMAAAsTAAALEwEAmpwYAAABQUlEQVRoge2ZsQ3CMBBF/0sQTMASNLAAbEBFQwETwAgUdBQsgA7RZAtoWIAd6GkoDmwcn2zHwkh+EvLZ/5573yAJQgghhBBCCDNB2YB/sgNgD2AF4AbAPTR2J4AXAO4AnCmKl0P9owCOANwBuI/4gG3BAcBDxPtrHYBHAJ4ieJsP2BY8AfAcwTt8wLbgGYCXCN7lA7YFLwC8RvBOH7AteAXgLYJ3+4BtwSsA7xG81wdsC14B+AjEkT6gBa8AfAbilT5gBa8AfAXilT6gBa8AfAfi1T5gBa8AfIfi1T6gBa8A/ATiSB/QglcA/gbiSB/QglcA/oXi1T5gBa8A/ITiSB/QglcAfgfi1T5gBa8A/IbilT5gBa8A/AXilT6gBa8A/IfiVT5gW/AKwH8gXuUDtgWvAAR94JscAHxE8DYfsC0ghBBCCCHkn/kGKd9kJp2pBf8AAAAASUVORK5CYII='
+
+// 128x128 
+const icon128 = 'iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAACXBIWXMAAAsTAAALEwEAmpwYAAAC5UlEQVR4nO3dy27TQBSAUX9LuwCxYAfsWbJgzZI1S9as2bJkzZodC/YsKKwQr1JYULEogiJBVdH02h6fx31MEqVJO/HcM2eciZO0kiRJkiRJkiRJkiRJkqQWDIF3wD1wH8jRfZD2HfAWGET7L7kHvAQeAY+BJ0BWnwBPgWfAc+BFoAHMADOBLQIcA0fBRoAhMAy2CDAKjIItAowD48BWAcbAOBUNYBKYpKIBTAFTVDSAaWCaigYwA8xQ0QDmgDkqGsA8ME9FA1gAFqhoAIvAIhUNYAlYoqIBLAPLVDSAFWCFigawCqxS0QDWgDUqGsA6sE5FA9gANqhoAJvAJhUNYAvYoqIBbAPbVDSAHWCHigawC+xS0QD2gD0qGsA+sE9FAzgADqhoAIfAIRUN4Ag4oqIBHAPHVDSAE+CEigZwCpxS0QDOgDMqGsA5cE5FAzgHzqloABdcuaCiAbT5W4C3dOUCjGbA3XDlAowQMAJOqWgAXkD4ByoaQMgKHFDRAEJWYJ+KBhCyAntUNICQFdijogGErMAeFQ0gZAX2qGgAISuwR0UDCFmBXSoaQMgK7FLRAEJW4ICKBhCyAgdUNICQFTigogGErMAhFQ0gZAUOqWgAIStwSEUDCFmBIyoaQMgKHFHRAEJW4JiKBhCyAsdUNICQFTihogGErMAJFQ0gZAVOqWgAIStwSkUDCFmBMyoaQMgKnFHRAEJW4JyKBhCyAudUNICQFbigogGErMAFFQ0gZAUuqWgA9fmYjqtoAHX5mI6raAB1OeJ2VT+koQE0bR84oqIBNG0HWNF9v8QGkCo/o2sAPqZjoasHPga+p/r8Pd5HdeQj4CvqS79E+6+5DXwB/KH7vA95T90bAV8Df6M+90XaV/aGwG+oz/0T7b/qHvAn6nN/RP/veyXgX9Tn/on23/dOwPuoz/0T7b/vw4CPqc/9Ee2/74PAJ1Gf+yPaf9+ngM+pz/0R7b/vswTU5f4fVqCSpFa5BmVqwi2A9GAAAAAASUVORK5CYII='
+
+const icons = { 16: icon16, 48: icon48, 128: icon128 }
+
+Object.entries(icons).forEach(([size, base64]) => {
+  const buffer = Buffer.from(base64, 'base64')
+  writeFileSync(join(iconsDir, `icon${size}.png`), buffer)
+  console.log(`Created icon${size}.png`)
+})
+
+console.log('PNG icons generated!')
