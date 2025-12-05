@@ -11,9 +11,10 @@ defineProps({
   <ContextMenuPortal>
     <ContextMenuContent
       :class="cn(
-        'z-50 min-w-[8rem] overflow-hidden rounded-xl border border-white/20 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl p-1.5 text-popover-foreground shadow-xl',
+        'z-50 min-w-[8rem] overflow-hidden rounded-xl backdrop-blur-xl p-1.5 shadow-xl',
         $props.class
       )"
+      style="background: var(--theme-bg); border: 1px solid var(--theme-border); color: var(--theme-text);"
     >
       <slot />
     </ContextMenuContent>

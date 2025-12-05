@@ -13,9 +13,10 @@ defineProps({
     <TooltipContent
       :side-offset="sideOffset"
       :class="cn(
-        'z-50 overflow-hidden rounded-lg border border-white/20 bg-gray-900/90 backdrop-blur-md px-3 py-1.5 text-sm text-white shadow-lg',
+        'z-50 overflow-hidden rounded-lg backdrop-blur-md px-3 py-1.5 text-sm shadow-lg',
         $props.class
       )"
+      style="background: var(--theme-bg); border: 1px solid var(--theme-border); color: var(--theme-text);"
     >
       <slot />
     </TooltipContent>

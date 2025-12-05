@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { Plus, Pencil, Trash2, Globe, MoreVertical, FolderPlus } from 'lucide-vue-next'
 import DynamicIcon from '@/components/DynamicIcon.vue'
 import { Card } from '@/components/ui/card'
@@ -159,6 +159,38 @@ function handleDeleteGroup(id) {
 function handleMoveBookmark(bookmarkId, groupId) {
   moveBookmarkToGroup(bookmarkId, groupId)
 }
+
+// Dock 风格放大效果
+const hoveredIndex = ref(null)
+
+function handleMouseEnter(index) {
+  hoveredIndex.value = index
+}
+
+function handleMouseLeave() {
+  hoveredIndex.value = null
+}
+
+// 计算书签项的缩放比例（Dock 风格）
+function getBookmarkScale(index) {
+  if (hoveredIndex.value === null) return 1
+  
+  const distance = Math.abs(index - hoveredIndex.value)
+  if (distance === 0) return 1.15  // 悬停项
+  if (distance === 1) return 1.08  // 相邻项
+  if (distance === 2) return 1.03  // 次相邻
+  return 1
+}
+
+// 计算 Y 轴偏移（悬停时上浮）
+function getBookmarkTranslateY(index) {
+  if (hoveredIndex.value === null) return 0
+  
+  const distance = Math.abs(index - hoveredIndex.value)
+  if (distance === 0) return -4
+  if (distance === 1) return -2
+  return 0
+}
 </script>
 
 <template>
@@ -182,7 +214,8 @@ function handleMoveBookmark(bookmarkId, groupId) {
           <Button
             variant="ghost"
             size="sm"
-            class="ml-1 text-white/60 hover:text-white hover:bg-white/10"
+            class="ml-1 rounded-full transition-colors"
+            style="color: var(--theme-text-muted);"
             @click="openAddGroupDialog"
           >
             <Plus class="w-4 h-4" />
@@ -192,7 +225,12 @@ function handleMoveBookmark(bookmarkId, groupId) {
         <!-- 分组管理下拉菜单 -->
         <DropdownMenu>
           <DropdownMenuTrigger as-child>
-            <Button variant="ghost" size="icon" class="ml-2 text-white/60 hover:text-white hover:bg-white/20 rounded-full">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              class="ml-2 rounded-full transition-colors"
+              style="color: var(--theme-text-muted);"
+            >
               <MoreHorizontal class="w-5 h-5" />
             </Button>
           </DropdownMenuTrigger>
@@ -217,13 +255,21 @@ function handleMoveBookmark(bookmarkId, groupId) {
 
       <!-- 书签内容区域 -->
       <TabsContent v-for="group in groups" :key="group.id" :value="group.id" class="mt-0">
-        <div class="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3">
+        <div class="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3" @mouseleave="handleMouseLeave">
           <!-- 书签项 -->
-          <ContextMenu v-for="bookmark in activeGroupBookmarks" :key="bookmark.id">
+          <ContextMenu v-for="(bookmark, index) in activeGroupBookmarks" :key="bookmark.id">
             <ContextMenuTrigger>
-              <div class="group relative">
+              <div 
+                class="group relative"
+                @mouseenter="handleMouseEnter(index)"
+              >
                 <Card
-                  class="aspect-square flex flex-col items-center justify-center p-1.5 cursor-pointer bg-white/15 backdrop-blur-xl hover:bg-white/25 hover:scale-105 transition-all duration-200 border border-white/20 shadow-lg rounded-xl"
+                  class="bookmark-card aspect-square flex flex-col items-center justify-center p-1.5 cursor-pointer backdrop-blur-xl shadow-lg rounded-xl transition-all duration-200 ease-out"
+                  :style="{
+                    transform: `scale(${getBookmarkScale(index)}) translateY(${getBookmarkTranslateY(index)}px)`,
+                    background: 'var(--theme-bg)',
+                    border: '1px solid var(--theme-border)'
+                  }"
                   @click="openBookmark(bookmark.url)"
                 >
                   <!-- 图标 -->
@@ -235,20 +281,21 @@ function handleMoveBookmark(bookmarkId, groupId) {
                       class="w-6 h-6 object-contain"
                       @error="$event.target.style.display = 'none'"
                     />
-                    <Globe v-else class="w-6 h-6 text-white/60" />
+                    <Globe v-else class="w-6 h-6" style="color: var(--theme-text-muted);" />
                   </div>
                   <!-- 标题 -->
-                  <span class="text-[10px] text-center text-white/90 truncate w-full px-0.5 leading-tight">
+                  <span class="text-[10px] text-center truncate w-full px-0.5 leading-tight" style="color: var(--theme-text-secondary);">
                     {{ bookmark.title }}
                   </span>
                   <!-- 快捷操作菜单 - 右上角内部竖向三点 -->
                   <DropdownMenu>
                     <DropdownMenuTrigger as-child>
                       <button
-                        class="absolute top-1 right-1 w-4 h-5 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 hover:bg-white/20 transition-all"
+                        class="absolute top-1 right-1 w-4 h-5 flex items-center justify-center rounded opacity-0 group-hover:opacity-100 transition-all"
+                        style="color: var(--theme-text-muted);"
                         @click.stop
                       >
-                        <MoreVertical class="w-3 h-3 text-white/70" />
+                        <MoreVertical class="w-3 h-3" />
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" class="min-w-[100px]">
@@ -263,6 +310,7 @@ function handleMoveBookmark(bookmarkId, groupId) {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </Card>
+
               </div>
             </ContextMenuTrigger>
 
@@ -294,11 +342,12 @@ function handleMoveBookmark(bookmarkId, groupId) {
 
           <!-- 添加按钮 -->
           <Card
-            class="aspect-square flex flex-col items-center justify-center p-2 cursor-pointer bg-white/10 backdrop-blur-xl hover:bg-white/20 hover:scale-105 transition-all duration-200 border border-dashed border-white/30 rounded-xl"
+            class="aspect-square flex flex-col items-center justify-center p-1.5 cursor-pointer rounded-xl transition-all"
+            style="background: transparent; border: 1px dashed var(--theme-border);"
             @click="openAddBookmarkDialog"
           >
-            <Plus class="w-6 h-6 text-white/50" />
-            <span class="text-[10px] text-white/50 mt-0.5">添加</span>
+            <Plus class="w-6 h-6" style="color: var(--theme-text-muted);" />
+            <span class="text-[10px] mt-0.5" style="color: var(--theme-text-muted);">添加</span>
           </Card>
         </div>
       </TabsContent>

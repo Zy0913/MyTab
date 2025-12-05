@@ -12,10 +12,17 @@ defineProps({
   <DropdownMenuItem
     :disabled="disabled"
     :class="cn(
-      'relative flex cursor-default select-none items-center rounded-lg px-2.5 py-1.5 text-sm outline-none transition-colors focus:bg-white/20 hover:bg-white/20 data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+      'dropdown-item relative flex cursor-default select-none items-center rounded-lg px-2.5 py-1.5 text-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       $props.class
     )"
   >
     <slot />
   </DropdownMenuItem>
 </template>
+
+<style scoped>
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background: var(--theme-bg-hover);
+}
+</style>

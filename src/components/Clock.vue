@@ -49,11 +49,11 @@ const date = computed(() => {
 </script>
 
 <template>
-  <div class="text-center select-none">
-    <div class="text-7xl md:text-8xl font-light text-white drop-shadow-lg tracking-wider">
+  <div class="text-center select-none transition-colors duration-300">
+    <div class="text-7xl md:text-8xl font-light drop-shadow-lg tracking-wider" style="color: var(--theme-text);">
       {{ time }}
     </div>
-    <div class="text-xl md:text-2xl text-white/80 mt-2 drop-shadow-md">
+    <div class="text-xl md:text-2xl mt-2 drop-shadow-md" style="color: var(--theme-text-secondary);">
       {{ date }}
     </div>
   </div>

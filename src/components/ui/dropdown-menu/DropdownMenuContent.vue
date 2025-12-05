@@ -15,9 +15,10 @@ defineProps({
       :side-offset="sideOffset"
       :align="align"
       :class="cn(
-        'z-50 min-w-[8rem] overflow-hidden rounded-xl border border-white/20 bg-white/15 backdrop-blur-xl p-1.5 text-white shadow-xl',
+        'z-50 min-w-[8rem] overflow-hidden rounded-xl backdrop-blur-xl p-1.5 shadow-xl',
         $props.class
       )"
+      style="background: var(--theme-bg); border: 1px solid var(--theme-border); color: var(--theme-text);"
     >
       <slot />
     </DropdownMenuContent>

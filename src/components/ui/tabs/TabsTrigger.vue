@@ -14,10 +14,26 @@ defineProps({
     :value="value"
     :disabled="disabled"
     :class="cn(
-      'inline-flex items-center justify-center whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-white/25 data-[state=active]:text-white data-[state=active]:shadow-sm data-[state=inactive]:hover:bg-white/10',
+      'tabs-trigger inline-flex items-center justify-center whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50',
       $props.class
     )"
   >
     <slot />
   </TabsTrigger>
 </template>
+
+<style scoped>
+.tabs-trigger {
+  color: var(--theme-text-secondary);
+}
+
+.tabs-trigger:hover {
+  background: var(--theme-bg-hover);
+}
+
+.tabs-trigger[data-state="active"] {
+  background: var(--theme-bg-hover);
+  color: var(--theme-text);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+</style>

@@ -15,6 +15,10 @@ import {
   showClock,
   showSeconds,
   use24Hour,
+  backgroundBrightness,
+  backgroundBlur,
+  hitokotoTypes,
+  selectedHitokotoTypes,
   getWallpapersByCategory,
   fetchWallpaperBySource,
   exportConfig,
@@ -72,6 +76,19 @@ function toggle24Hour() {
   use24Hour.value = !use24Hour.value
 }
 
+// 切换一言类型
+function toggleHitokotoType(typeId) {
+  const index = selectedHitokotoTypes.value.indexOf(typeId)
+  if (index > -1) {
+    // 至少保留一个类型
+    if (selectedHitokotoTypes.value.length > 1) {
+      selectedHitokotoTypes.value.splice(index, 1)
+    }
+  } else {
+    selectedHitokotoTypes.value.push(typeId)
+  }
+}
+
 // 导出配置
 function handleExport() {
   exportConfig()
@@ -108,7 +125,7 @@ async function handleImport(event) {
   <Button
     variant="ghost"
     size="icon"
-    class="rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/30 shadow-lg"
+    class="settings-btn rounded-full backdrop-blur-md shadow-lg transition-colors"
     @click="showDrawer = true"
     title="设置"
   >
@@ -119,18 +136,18 @@ async function handleImport(event) {
   <Drawer v-model:open="showDrawer">
     <template #default="{ close }">
       <!-- 头部 -->
-      <div class="flex items-center justify-between px-4 py-3 border-b border-white/10">
-        <h2 class="text-base font-semibold flex items-center gap-2">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+        <h2 class="text-sm font-semibold flex items-center gap-2">
           <SettingsIcon class="w-4 h-4" />
           设置
         </h2>
-        <Button variant="ghost" size="icon" @click="close" class="rounded-full w-8 h-8">
+        <Button variant="ghost" size="icon" @click="close" class="rounded-full w-7 h-7 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
           <X class="w-4 h-4" />
         </Button>
       </div>
 
       <!-- 内容区域 -->
-      <div class="flex-1 overflow-y-auto px-4 py-3 space-y-5">
+      <div class="flex-1 overflow-y-auto px-4 py-3 space-y-4">
         <!-- 背景设置 -->
         <div class="space-y-3">
           <div class="flex items-center justify-between">
@@ -224,6 +241,42 @@ async function handleImport(event) {
           <p class="text-xs text-muted-foreground">
             壁纸来源：<a href="https://unsplash.com" target="_blank" class="text-primary hover:underline">Unsplash</a>（免费高质量图片）
           </p>
+
+          <!-- 聚焦时亮度设置 -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-sm">聚焦时亮度</span>
+              <span class="text-xs text-muted-foreground">{{ backgroundBrightness }}%</span>
+            </div>
+            <input
+              type="range"
+              :value="backgroundBrightness"
+              @input="backgroundBrightness = Number($event.target.value)"
+              min="30"
+              max="100"
+              step="5"
+              class="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+            />
+            <p class="text-[10px] text-muted-foreground">点击搜索框时背景变暗程度</p>
+          </div>
+
+          <!-- 聚焦时模糊设置 -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-sm">聚焦时磨砂</span>
+              <span class="text-xs text-muted-foreground">{{ backgroundBlur }}px</span>
+            </div>
+            <input
+              type="range"
+              :value="backgroundBlur"
+              @input="backgroundBlur = Number($event.target.value)"
+              min="0"
+              max="20"
+              step="1"
+              class="w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary"
+            />
+            <p class="text-[10px] text-muted-foreground">点击搜索框时背景模糊程度</p>
+          </div>
         </div>
 
         <!-- 时钟设置 -->
@@ -283,6 +336,29 @@ async function handleImport(event) {
                 />
               </div>
             </div>
+          </div>
+        </div>
+
+        <!-- 一言设置 -->
+        <div class="space-y-3">
+          <h3 class="text-sm font-semibold flex items-center gap-2">
+            <span class="w-4 h-4 text-center">💬</span>
+            搜索框一言
+          </h3>
+          <p class="text-[10px] text-muted-foreground -mt-1">选择搜索框随机显示的句子类型</p>
+          
+          <div class="flex flex-wrap gap-1.5">
+            <button
+              v-for="type in hitokotoTypes"
+              :key="type.id"
+              class="px-2.5 py-1 text-xs rounded-full transition-colors"
+              :class="selectedHitokotoTypes.includes(type.id) 
+                ? 'bg-primary text-white' 
+                : 'bg-secondary hover:bg-secondary/80'"
+              @click="toggleHitokotoType(type.id)"
+            >
+              {{ type.name }}
+            </button>
           </div>
         </div>
 
@@ -360,3 +436,15 @@ async function handleImport(event) {
     @close="showToast = false"
   />
 </template>
+
+<style scoped>
+.settings-btn {
+  background: var(--theme-bg);
+  color: var(--theme-text);
+  border: 1px solid var(--theme-border);
+}
+
+.settings-btn:hover {
+  background: var(--theme-bg-hover);
+}
+</style>

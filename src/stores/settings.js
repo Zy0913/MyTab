@@ -1,10 +1,11 @@
 import { ref, watch, computed } from 'vue'
 
-// 搜索引擎配置
+// 搜索引擎配置（带图标和颜色）
 const searchEngines = [
-  { id: 'google', name: 'Google', url: 'https://www.google.com/search?q=' },
-  { id: 'bing', name: 'Bing', url: 'https://www.bing.com/search?q=' },
-  { id: 'baidu', name: '百度', url: 'https://www.baidu.com/s?wd=' }
+  { id: 'google', name: 'Google', url: 'https://www.google.com/search?q=', icon: 'G', color: '#4285F4' },
+  { id: 'bing', name: 'Bing', url: 'https://www.bing.com/search?q=', icon: 'B', color: '#008373' },
+  { id: 'baidu', name: '百度', url: 'https://www.baidu.com/s?wd=', icon: '百', color: '#2932E1' },
+  { id: 'duckduckgo', name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=', icon: 'D', color: '#DE5833' }
 ]
 
 // 可用的分组图标（Lucide 图标名称）
@@ -40,9 +41,26 @@ const defaultBookmarks = [
   { id: '10', title: 'Netflix', url: 'https://netflix.com', icon: 'https://assets.nflxext.com/us/ffe/siteui/common/icons/nficon2016.ico', groupId: 'media' }
 ]
 
+// 一言类型配置
+const hitokotoTypes = [
+  { id: 'a', name: '动画', checked: true },
+  { id: 'b', name: '漫画', checked: true },
+  { id: 'c', name: '游戏', checked: true },
+  { id: 'd', name: '文学', checked: false },
+  { id: 'e', name: '原创', checked: false },
+  { id: 'f', name: '网络', checked: false },
+  { id: 'g', name: '其他', checked: false },
+  { id: 'h', name: '影视', checked: false },
+  { id: 'i', name: '诗词', checked: false },
+  { id: 'j', name: '网易云', checked: false },
+  { id: 'k', name: '哲学', checked: false },
+  { id: 'l', name: '抖机灵', checked: false }
+]
+
 // 壁纸源配置
 const wallpaperSources = [
   { id: 'local', name: '精选壁纸', description: '本地精选高质量壁纸' },
+  { id: 'random', name: '随机壁纸', description: '随机高清壁纸 API' },
   { id: 'unsplash', name: 'Unsplash', description: '全球最大免费图库' },
   { id: 'picsum', name: 'Picsum', description: '随机精美图片' },
   { id: 'bing', name: 'Bing 每日', description: '必应每日精选' }
@@ -178,6 +196,9 @@ const wallpaperSource = ref(loadFromStorage('wallpaperSource', 'local'))
 const showClock = ref(loadFromStorage('showClock', true))
 const showSeconds = ref(loadFromStorage('showSeconds', false))
 const use24Hour = ref(loadFromStorage('use24Hour', true))
+const backgroundBrightness = ref(loadFromStorage('backgroundBrightness', 70))
+const backgroundBlur = ref(loadFromStorage('backgroundBlur', 8))
+const selectedHitokotoTypes = ref(loadFromStorage('hitokotoTypes', ['a', 'b', 'c']))
 
 // 计算属性：当前分组的书签
 const activeGroupBookmarks = computed(() => {
@@ -194,6 +215,9 @@ watch(wallpaperSource, (val) => saveToStorage('wallpaperSource', val))
 watch(showClock, (val) => saveToStorage('showClock', val))
 watch(showSeconds, (val) => saveToStorage('showSeconds', val))
 watch(use24Hour, (val) => saveToStorage('use24Hour', val))
+watch(backgroundBrightness, (val) => saveToStorage('backgroundBrightness', val))
+watch(backgroundBlur, (val) => saveToStorage('backgroundBlur', val))
+watch(selectedHitokotoTypes, (val) => saveToStorage('hitokotoTypes', val), { deep: true })
 
 // 导出
 export {
@@ -203,6 +227,7 @@ export {
   wallpaperCategories,
   unsplashCategories,
   defaultBackgrounds,
+  hitokotoTypes,
   currentEngine,
   groups,
   bookmarks,
@@ -212,7 +237,10 @@ export {
   wallpaperSource,
   showClock,
   showSeconds,
-  use24Hour
+  use24Hour,
+  backgroundBrightness,
+  backgroundBlur,
+  selectedHitokotoTypes
 }
 
 // 根据分类筛选壁纸
@@ -287,6 +315,13 @@ export async function fetchPicsumWallpaper() {
   return setWallpaperWithPreload(url)
 }
 
+// 从随机壁纸 API 获取壁纸
+export async function fetchRandomApiWallpaper() {
+  // 使用随机参数避免缓存
+  const url = `https://imgapi.xl0408.top/index.php?t=${Date.now()}`
+  return setWallpaperWithPreload(url)
+}
+
 // Bing 每日壁纸 URL 列表（预设，避免 CORS 问题）
 const bingWallpapers = [
   'https://cn.bing.com/th?id=OHR.PolarBearDay_ZH-CN0123456789_1920x1080.jpg',
@@ -315,6 +350,8 @@ export async function fetchBingWallpaper() {
 export async function fetchWallpaperBySource(category = 'nature') {
   const source = wallpaperSource.value
   switch (source) {
+    case 'random':
+      return fetchRandomApiWallpaper()
     case 'unsplash':
       return fetchUnsplashWallpaper(category)
     case 'picsum':
