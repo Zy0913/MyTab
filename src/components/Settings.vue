@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { Settings as SettingsIcon, Image, Clock, Check, Import, Bookmark, X, RefreshCw, Loader2, Download, Upload, Database } from 'lucide-vue-next'
+import { Settings as SettingsIcon, Image, Clock, Check, Import, Bookmark, X, RefreshCw, Loader2, Download, Upload, Database, CloudSun } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Drawer } from '@/components/ui/drawer'
@@ -22,7 +22,10 @@ import {
   getWallpapersByCategory,
   fetchWallpaperBySource,
   exportConfig,
-  importConfig
+  importConfig,
+  showWeather,
+  weatherCity,
+  weatherUnit
 } from '@/stores/settings'
 
 const showDrawer = ref(false)
@@ -74,6 +77,15 @@ function toggleSeconds() {
 
 function toggle24Hour() {
   use24Hour.value = !use24Hour.value
+}
+
+// 天气设置
+function toggleWeather() {
+  showWeather.value = !showWeather.value
+}
+
+function toggleWeatherUnit() {
+  weatherUnit.value = weatherUnit.value === 'C' ? 'F' : 'C'
 }
 
 // 切换一言类型
@@ -335,6 +347,59 @@ async function handleImport(event) {
                   :class="use24Hour ? 'translate-x-4' : 'translate-x-0'"
                 />
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 天气设置 -->
+        <div class="space-y-3">
+          <h3 class="text-sm font-semibold flex items-center gap-2">
+            <CloudSun class="w-4 h-4" />
+            天气设置
+          </h3>
+
+          <div class="space-y-2">
+            <div
+              class="flex items-center justify-between p-3 rounded-lg bg-secondary/50 cursor-pointer hover:bg-secondary transition-colors"
+              @click="toggleWeather"
+            >
+              <span class="text-sm">显示天气</span>
+              <div
+                class="w-10 h-6 rounded-full transition-colors flex items-center px-1"
+                :class="showWeather ? 'bg-primary' : 'bg-gray-300'"
+              >
+                <div
+                  class="w-4 h-4 rounded-full bg-white shadow transition-transform"
+                  :class="showWeather ? 'translate-x-4' : 'translate-x-0'"
+                />
+              </div>
+            </div>
+
+            <div
+              class="flex items-center justify-between p-3 rounded-lg bg-secondary/50 cursor-pointer hover:bg-secondary transition-colors"
+              :class="{ 'opacity-50 pointer-events-none': !showWeather }"
+              @click="toggleWeatherUnit"
+            >
+              <span class="text-sm">温度单位</span>
+              <div class="flex items-center gap-2">
+                <span class="text-xs" :class="weatherUnit === 'C' ? 'text-primary font-semibold' : 'text-muted-foreground'">°C</span>
+                <span class="text-xs text-muted-foreground">/</span>
+                <span class="text-xs" :class="weatherUnit === 'F' ? 'text-primary font-semibold' : 'text-muted-foreground'">°F</span>
+              </div>
+            </div>
+
+            <div
+              class="p-3 rounded-lg bg-secondary/50"
+              :class="{ 'opacity-50 pointer-events-none': !showWeather }"
+            >
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm">城市</span>
+              </div>
+              <Input
+                v-model="weatherCity"
+                placeholder="留空自动定位（如：Shanghai）"
+                class="h-8 text-sm"
+              />
             </div>
           </div>
         </div>

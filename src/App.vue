@@ -5,6 +5,7 @@ import Clock from './components/Clock.vue'
 import SearchBox from './components/SearchBox.vue'
 import BookmarkGrid from './components/BookmarkGrid.vue'
 import Settings from './components/Settings.vue'
+import WeatherWidget from './components/WeatherWidget.vue'
 import { Button } from './components/ui/button'
 import { backgroundUrl, showClock, fetchWallpaperBySource, backgroundBrightness, backgroundBlur } from './stores/settings'
 
@@ -192,6 +193,11 @@ async function changeWallpaper() {
 
       <!-- 书签网格 -->
       <BookmarkGrid />
+    </div>
+
+    <!-- 左上角天气组件 -->
+    <div class="fixed top-4 left-4 z-40">
+      <WeatherWidget />
     </div>
 
     <!-- 右上角设置按钮 -->

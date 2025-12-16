@@ -200,6 +200,11 @@ const backgroundBrightness = ref(loadFromStorage('backgroundBrightness', 70))
 const backgroundBlur = ref(loadFromStorage('backgroundBlur', 8))
 const selectedHitokotoTypes = ref(loadFromStorage('hitokotoTypes', ['a', 'b', 'c']))
 
+// 天气设置
+const showWeather = ref(loadFromStorage('showWeather', true))
+const weatherCity = ref(loadFromStorage('weatherCity', ''))
+const weatherUnit = ref(loadFromStorage('weatherUnit', 'C'))
+
 // 计算属性：当前分组的书签
 const activeGroupBookmarks = computed(() => {
   return bookmarks.value.filter((b) => b.groupId === activeGroupId.value)
@@ -218,6 +223,9 @@ watch(use24Hour, (val) => saveToStorage('use24Hour', val))
 watch(backgroundBrightness, (val) => saveToStorage('backgroundBrightness', val))
 watch(backgroundBlur, (val) => saveToStorage('backgroundBlur', val))
 watch(selectedHitokotoTypes, (val) => saveToStorage('hitokotoTypes', val), { deep: true })
+watch(showWeather, (val) => saveToStorage('showWeather', val))
+watch(weatherCity, (val) => saveToStorage('weatherCity', val))
+watch(weatherUnit, (val) => saveToStorage('weatherUnit', val))
 
 // 导出
 export {
@@ -240,7 +248,10 @@ export {
   use24Hour,
   backgroundBrightness,
   backgroundBlur,
-  selectedHitokotoTypes
+  selectedHitokotoTypes,
+  showWeather,
+  weatherCity,
+  weatherUnit
 }
 
 // 根据分类筛选壁纸
@@ -583,7 +594,10 @@ export function exportConfig() {
       currentEngine: currentEngine.value,
       showClock: showClock.value,
       showSeconds: showSeconds.value,
-      use24Hour: use24Hour.value
+      use24Hour: use24Hour.value,
+      showWeather: showWeather.value,
+      weatherCity: weatherCity.value,
+      weatherUnit: weatherUnit.value
     }
   }
   
@@ -677,6 +691,15 @@ export function importConfig(file) {
         }
         if (typeof data.use24Hour === 'boolean') {
           use24Hour.value = data.use24Hour
+        }
+        if (typeof data.showWeather === 'boolean') {
+          showWeather.value = data.showWeather
+        }
+        if (data.weatherCity) {
+          weatherCity.value = data.weatherCity
+        }
+        if (data.weatherUnit) {
+          weatherUnit.value = data.weatherUnit
         }
 
         resolve({
