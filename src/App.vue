@@ -9,10 +9,11 @@ import { Button } from './components/ui/button'
 import { backgroundUrl, showClock, fetchWallpaperBySource, backgroundBrightness, backgroundBlur } from './stores/settings'
 
 // 双层背景交替显示
-const bgA = ref('')
+// 如果已有背景URL，直接使用（浏览器有缓存），避免灰色闪烁
+const bgA = ref(backgroundUrl.value || '')
 const bgB = ref('')
 const showA = ref(true)  // true 显示 A 层，false 显示 B 层
-const bgLoaded = ref(false)
+const bgLoaded = ref(!!backgroundUrl.value)  // 有缓存的URL则直接显示
 const isLoading = ref(false)
 const isSearchFocused = ref(false)
 const isChanging = ref(false)
@@ -28,40 +29,50 @@ function analyzeImageBrightness(url) {
   return new Promise((resolve) => {
     const img = new Image()
     img.crossOrigin = 'anonymous'
-    
+
+    const cleanup = () => {
+      img.onload = null
+      img.onerror = null
+    }
+
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas')
         const ctx = canvas.getContext('2d')
-        
+
         // 缩小尺寸加快分析
         const size = 50
         canvas.width = size
         canvas.height = size
-        
+
         ctx.drawImage(img, 0, 0, size, size)
         const imageData = ctx.getImageData(0, 0, size, size)
         const data = imageData.data
-        
+
         let totalBrightness = 0
         const pixelCount = data.length / 4
-        
+
         for (let i = 0; i < data.length; i += 4) {
           // 计算亮度 (ITU-R BT.709)
           const brightness = 0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]
           totalBrightness += brightness
         }
-        
+
         const avgBrightness = totalBrightness / pixelCount
+        cleanup()
         // 亮度 < 128 认为是深色背景
         resolve(avgBrightness < 128)
       } catch (e) {
         // 跨域或其他错误，默认深色背景
+        cleanup()
         resolve(true)
       }
     }
-    
-    img.onerror = () => resolve(true)
+
+    img.onerror = () => {
+      cleanup()
+      resolve(true)
+    }
     img.src = url
   })
 }
@@ -70,8 +81,18 @@ function analyzeImageBrightness(url) {
 async function preloadImage(url) {
   return new Promise((resolve) => {
     const img = new Image()
-    img.onload = () => resolve(true)
-    img.onerror = () => resolve(false)
+    const cleanup = () => {
+      img.onload = null
+      img.onerror = null
+    }
+    img.onload = () => {
+      cleanup()
+      resolve(true)
+    }
+    img.onerror = () => {
+      cleanup()
+      resolve(false)
+    }
     img.src = url
   })
 }
@@ -79,15 +100,9 @@ async function preloadImage(url) {
 // 初始加载背景
 onMounted(async () => {
   if (backgroundUrl.value) {
-    await preloadImage(backgroundUrl.value)
-    bgA.value = backgroundUrl.value
-    showA.value = true
-    
-    // 分析背景亮度
-    isDarkBg.value = await analyzeImageBrightness(backgroundUrl.value)
-    
-    requestAnimationFrame(() => {
-      bgLoaded.value = true
+    // 异步分析背景亮度（不阻塞显示）
+    analyzeImageBrightness(backgroundUrl.value).then(isDark => {
+      isDarkBg.value = isDark
     })
   }
 })

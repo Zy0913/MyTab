@@ -1,18 +1,33 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { showSeconds, use24Hour } from '@/stores/settings'
 
 const now = ref(new Date())
 let timer = null
 
+function updateTime() {
+  now.value = new Date()
+}
+
+function startTimer() {
+  if (timer) clearInterval(timer)
+  // 根据是否显示秒钟调整更新频率
+  const interval = showSeconds.value ? 1000 : 60000
+  timer = setInterval(updateTime, interval)
+}
+
 onMounted(() => {
-  timer = setInterval(() => {
-    now.value = new Date()
-  }, 1000)
+  startTimer()
 })
 
+// 监听 showSeconds 变化以调整更新频率
+watch(showSeconds, startTimer)
+
 onUnmounted(() => {
-  if (timer) clearInterval(timer)
+  if (timer) {
+    clearInterval(timer)
+    timer = null
+  }
 })
 
 const time = computed(() => {

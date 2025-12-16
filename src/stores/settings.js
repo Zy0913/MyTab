@@ -270,8 +270,18 @@ export function setRandomWallpaper(categoryId) {
 export function preloadImage(url) {
   return new Promise((resolve, reject) => {
     const img = new Image()
-    img.onload = () => resolve(url)
-    img.onerror = () => reject(new Error('Image load failed'))
+    const cleanup = () => {
+      img.onload = null
+      img.onerror = null
+    }
+    img.onload = () => {
+      cleanup()
+      resolve(url)
+    }
+    img.onerror = () => {
+      cleanup()
+      reject(new Error('Image load failed'))
+    }
     img.src = url
   })
 }
@@ -322,18 +332,18 @@ export async function fetchRandomApiWallpaper() {
   return setWallpaperWithPreload(url)
 }
 
-// Bing 每日壁纸 URL 列表（预设，避免 CORS 问题）
-const bingWallpapers = [
-  'https://cn.bing.com/th?id=OHR.PolarBearDay_ZH-CN0123456789_1920x1080.jpg',
-  'https://cn.bing.com/th?id=OHR.SnowyOwl_ZH-CN1234567890_1920x1080.jpg',
-  'https://cn.bing.com/th?id=OHR.GoldenGate_ZH-CN2345678901_1920x1080.jpg',
-  'https://cn.bing.com/th?id=OHR.MountFuji_ZH-CN3456789012_1920x1080.jpg'
-]
-
 // 从 Bing 获取每日壁纸
 export async function fetchBingWallpaper() {
   try {
-    const response = await fetch('https://corsproxy.io/?https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8&mkt=zh-CN')
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000)
+
+    const response = await fetch(
+      'https://corsproxy.io/?https://www.bing.com/HPImageArchive.aspx?format=js&idx=0&n=8&mkt=zh-CN',
+      { signal: controller.signal }
+    )
+    clearTimeout(timeoutId)
+
     const data = await response.json()
     if (data.images && data.images.length > 0) {
       const randomIndex = Math.floor(Math.random() * data.images.length)
@@ -341,7 +351,11 @@ export async function fetchBingWallpaper() {
       return setWallpaperWithPreload(url)
     }
   } catch (e) {
-    console.error('Failed to fetch Bing wallpaper, using Picsum fallback')
+    if (e.name === 'AbortError') {
+      console.error('Bing wallpaper request timeout, using Picsum fallback')
+    } else {
+      console.error('Failed to fetch Bing wallpaper, using Picsum fallback')
+    }
     return fetchPicsumWallpaper()
   }
 }
@@ -589,19 +603,56 @@ export function exportConfig() {
 // 导入配置
 export function importConfig(file) {
   return new Promise((resolve, reject) => {
+    // 文件大小检查 (限制 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      reject(new Error('配置文件过大 (最大 10MB)'))
+      return
+    }
+
     const reader = new FileReader()
-    
+
     reader.onload = (e) => {
       try {
         const config = JSON.parse(e.target.result)
-        
+
         // 验证配置格式
         if (!config.version || !config.data) {
           throw new Error('无效的配置文件格式')
         }
-        
+
+        // 验证版本号
+        if (typeof config.version !== 'number' || config.version < 1) {
+          throw new Error('不支持的配置文件版本')
+        }
+
         const { data } = config
-        
+
+        // 验证数据类型
+        if (data.groups && !Array.isArray(data.groups)) {
+          throw new Error('分组数据格式错误')
+        }
+        if (data.bookmarks && !Array.isArray(data.bookmarks)) {
+          throw new Error('书签数据格式错误')
+        }
+
+        // 验证分组结构
+        if (data.groups) {
+          for (const group of data.groups) {
+            if (!group.id || !group.name) {
+              throw new Error('分组缺少必需字段')
+            }
+          }
+        }
+
+        // 验证书签结构
+        if (data.bookmarks) {
+          for (const bookmark of data.bookmarks) {
+            if (!bookmark.id || !bookmark.title || !bookmark.url) {
+              throw new Error('书签缺少必需字段')
+            }
+          }
+        }
+
         // 导入各项配置
         if (data.groups && Array.isArray(data.groups)) {
           groups.value = data.groups
@@ -627,7 +678,7 @@ export function importConfig(file) {
         if (typeof data.use24Hour === 'boolean') {
           use24Hour.value = data.use24Hour
         }
-        
+
         resolve({
           success: true,
           message: '配置导入成功',

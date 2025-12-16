@@ -22,10 +22,10 @@ import {
 const showDrawer = ref(false)
 const loading = ref(false)
 const browserBookmarks = ref([])
-const selectedBookmarks = ref(new Set())
+const selectedBookmarks = ref([])
 const searchQuery = ref('')
 const targetGroup = ref('default')
-const expandedFolders = ref(new Set())
+const expandedFolders = ref([])
 
 // Toast 通知状态
 const showToast = ref(false)
@@ -94,38 +94,38 @@ const groupedBookmarks = computed(() => {
 // 打开抽屉
 async function openDialog() {
   showDrawer.value = true
-  selectedBookmarks.value = new Set()
-  expandedFolders.value = new Set()
+  selectedBookmarks.value = []
+  expandedFolders.value = []
   targetGroup.value = activeGroupId.value
-  
+
   if (isExtension.value) {
     await loadBookmarks()
     // 默认展开第一个文件夹
     const folders = Object.keys(groupedBookmarks.value)
     if (folders.length > 0) {
-      expandedFolders.value.add(folders[0])
+      expandedFolders.value.push(folders[0])
     }
   }
 }
 
 // 切换文件夹展开状态
 function toggleFolder(folder) {
-  if (expandedFolders.value.has(folder)) {
-    expandedFolders.value.delete(folder)
+  const index = expandedFolders.value.indexOf(folder)
+  if (index > -1) {
+    expandedFolders.value.splice(index, 1)
   } else {
-    expandedFolders.value.add(folder)
+    expandedFolders.value.push(folder)
   }
-  expandedFolders.value = new Set(expandedFolders.value)
 }
 
 // 展开全部
 function expandAll() {
-  expandedFolders.value = new Set(Object.keys(groupedBookmarks.value))
+  expandedFolders.value = Object.keys(groupedBookmarks.value)
 }
 
 // 收起全部
 function collapseAll() {
-  expandedFolders.value = new Set()
+  expandedFolders.value = []
 }
 
 // 加载浏览器书签
@@ -142,56 +142,57 @@ async function loadBookmarks() {
 
 // 切换选中状态
 function toggleSelect(bookmark) {
-  if (selectedBookmarks.value.has(bookmark.id)) {
-    selectedBookmarks.value.delete(bookmark.id)
+  const index = selectedBookmarks.value.indexOf(bookmark.id)
+  if (index > -1) {
+    selectedBookmarks.value.splice(index, 1)
   } else {
-    selectedBookmarks.value.add(bookmark.id)
+    selectedBookmarks.value.push(bookmark.id)
   }
-  // 触发响应式更新
-  selectedBookmarks.value = new Set(selectedBookmarks.value)
 }
 
 // 全选/取消全选当前筛选结果
 function toggleSelectAll() {
   const allSelected = filteredBookmarks.value.every((bm) =>
-    selectedBookmarks.value.has(bm.id)
+    selectedBookmarks.value.includes(bm.id)
   )
-  
+
   if (allSelected) {
     // 取消全选
     for (const bm of filteredBookmarks.value) {
-      selectedBookmarks.value.delete(bm.id)
+      const index = selectedBookmarks.value.indexOf(bm.id)
+      if (index > -1) selectedBookmarks.value.splice(index, 1)
     }
   } else {
     // 全选
     for (const bm of filteredBookmarks.value) {
-      selectedBookmarks.value.add(bm.id)
+      if (!selectedBookmarks.value.includes(bm.id)) {
+        selectedBookmarks.value.push(bm.id)
+      }
     }
   }
-  selectedBookmarks.value = new Set(selectedBookmarks.value)
 }
 
 // 导入选中的书签
 async function handleImport() {
   const selected = browserBookmarks.value.filter((bm) =>
-    selectedBookmarks.value.has(bm.id)
+    selectedBookmarks.value.includes(bm.id)
   )
-  
+
   if (selected.length === 0) return
-  
+
   loading.value = true
   try {
     const imported = await importBrowserBookmarks(selected, targetGroup.value)
     const skipped = selected.length - imported.length
-    
+
     // 显示 toast 通知
     toastData.value = {
       title: '导入成功',
       message: `已导入 ${imported.length} 个书签${skipped > 0 ? `，跳过 ${skipped} 个重复` : ''}`
     }
     showToast.value = true
-    
-    selectedBookmarks.value = new Set()
+
+    selectedBookmarks.value = []
     // 关闭抽屉
     showDrawer.value = false
   } catch (e) {
@@ -275,8 +276,8 @@ defineExpose({ openDialog })
             <span class="text-sm font-medium">
               {{ loading ? '加载中...' : `${filteredBookmarks.length} 个书签` }}
             </span>
-            <span v-if="selectedBookmarks.size > 0" class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-              已选 {{ selectedBookmarks.size }}
+            <span v-if="selectedBookmarks.length > 0" class="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+              已选 {{ selectedBookmarks.length }}
             </span>
           </div>
           <div class="flex items-center gap-1">
@@ -287,7 +288,7 @@ defineExpose({ openDialog })
               收起
             </Button>
             <Button variant="ghost" size="sm" @click="toggleSelectAll" :disabled="loading" class="text-[10px] px-2 h-6">
-              {{ filteredBookmarks.every(bm => selectedBookmarks.has(bm.id)) ? '取消全选' : '全选' }}
+              {{ filteredBookmarks.every(bm => selectedBookmarks.includes(bm.id)) ? '取消全选' : '全选' }}
             </Button>
           </div>
         </div>
@@ -310,35 +311,35 @@ defineExpose({ openDialog })
                 class="flex items-center gap-1.5 px-2 py-1.5 rounded-md cursor-pointer hover:bg-secondary/50 transition-colors"
                 @click="toggleFolder(folder)"
               >
-                <ChevronRight 
-                  class="w-3 h-3 text-muted-foreground transition-transform" 
-                  :class="{ 'rotate-90': expandedFolders.has(folder) }"
+                <ChevronRight
+                  class="w-3 h-3 text-muted-foreground transition-transform"
+                  :class="{ 'rotate-90': expandedFolders.includes(folder) }"
                 />
-                <Folder v-if="!expandedFolders.has(folder)" class="w-3.5 h-3.5 text-amber-500" />
+                <Folder v-if="!expandedFolders.includes(folder)" class="w-3.5 h-3.5 text-amber-500" />
                 <FolderOpen v-else class="w-3.5 h-3.5 text-amber-500" />
                 <span class="text-xs font-medium flex-1">{{ folder }}</span>
                 <span class="text-[10px] text-muted-foreground">({{ bookmarks.length }})</span>
               </div>
               
               <!-- 书签项（展开时显示） -->
-              <div v-if="expandedFolders.has(folder)" class="ml-3 border-l border-border/30 pl-2 mt-0.5">
+              <div v-if="expandedFolders.includes(folder)" class="ml-3 border-l border-border/30 pl-2 mt-0.5">
                 <div
                   v-for="bookmark in bookmarks"
                   :key="bookmark.id"
                   class="flex items-center gap-2 px-2 py-1 rounded-md cursor-pointer transition-all"
-                  :class="selectedBookmarks.has(bookmark.id) 
-                    ? 'bg-primary/10' 
+                  :class="selectedBookmarks.includes(bookmark.id)
+                    ? 'bg-primary/10'
                     : 'hover:bg-secondary/60'"
                   @click="toggleSelect(bookmark)"
                 >
                   <!-- 选中状态 -->
                   <div
                     class="w-4 h-4 rounded flex items-center justify-center transition-all shrink-0"
-                    :class="selectedBookmarks.has(bookmark.id) 
-                      ? 'bg-primary text-white' 
+                    :class="selectedBookmarks.includes(bookmark.id)
+                      ? 'bg-primary text-white'
                       : 'bg-secondary/80 border border-border/50'"
                   >
-                    <Check v-if="selectedBookmarks.has(bookmark.id)" class="w-2.5 h-2.5" />
+                    <Check v-if="selectedBookmarks.includes(bookmark.id)" class="w-2.5 h-2.5" />
                   </div>
                   
                   <!-- 图标 -->
@@ -369,11 +370,11 @@ defineExpose({ openDialog })
           <Button
             size="sm"
             @click="handleImport"
-            :disabled="selectedBookmarks.size === 0 || loading"
+            :disabled="selectedBookmarks.length === 0 || loading"
             class="gap-1.5"
           >
             <Import class="w-3.5 h-3.5" />
-            导入{{ selectedBookmarks.size > 0 ? ` ${selectedBookmarks.size} 项` : '' }}
+            导入{{ selectedBookmarks.length > 0 ? ` ${selectedBookmarks.length} 项` : '' }}
           </Button>
         </div>
       </div>

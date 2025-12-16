@@ -30,11 +30,18 @@ async function fetchHitokoto() {
   try {
     // 构建类型参数
     const types = selectedHitokotoTypes.value
-    const typeParams = types.length > 0 
+    const typeParams = types && types.length > 0
       ? types.map(t => `c=${t}`).join('&')
       : 'c=a'  // 默认动画类型
-    
-    const response = await fetch(`https://v1.hitokoto.cn?${typeParams}`)
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000)
+
+    const response = await fetch(`https://v1.hitokoto.cn?${typeParams}`, {
+      signal: controller.signal
+    })
+    clearTimeout(timeoutId)
+
     const data = await response.json()
     hitokoto.value = data.hitokoto || fallbackSentences[0]
   } catch {
@@ -109,6 +116,8 @@ function selectEngine(engineId) {
         v-model="query"
         type="text"
         :placeholder="hitokoto"
+        aria-label="搜索或输入网址"
+        role="searchbox"
         class="search-input flex-1 border-0 bg-transparent focus:outline-none focus:ring-0 transition-colors"
         @focus="handleFocus"
         @blur="handleBlur"

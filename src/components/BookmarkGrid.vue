@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { Plus, Pencil, Trash2, Globe, MoreVertical, FolderPlus } from 'lucide-vue-next'
+import { Plus, Pencil, Trash2, Globe, MoreVertical, MoreHorizontal, FolderPlus } from 'lucide-vue-next'
 import DynamicIcon from '@/components/DynamicIcon.vue'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -64,6 +64,14 @@ const editGroupMode = ref(false)
 const currentGroup = ref(null)
 const groupForm = ref({ name: '', icon: 'Folder' })
 
+// 跟踪图标加载失败的书签
+const failedIcons = ref(new Set())
+
+// 处理图标加载错误
+function handleIconError(bookmarkId) {
+  failedIcons.value = new Set([...failedIcons.value, bookmarkId])
+}
+
 // 切换分组
 function switchGroup(groupId) {
   activeGroupId.value = groupId
@@ -120,6 +128,14 @@ function handleDeleteBookmark(id) {
 // 打开书签
 function openBookmark(url) {
   window.open(url, '_self')
+}
+
+// 键盘导航处理
+function handleBookmarkKeydown(event, bookmark) {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault()
+    openBookmark(bookmark.url)
+  }
 }
 
 // 打开添加分组弹窗
@@ -255,7 +271,7 @@ function getBookmarkTranslateY(index) {
 
       <!-- 书签内容区域 -->
       <TabsContent v-for="group in groups" :key="group.id" :value="group.id" class="mt-0">
-        <div class="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-3" @mouseleave="handleMouseLeave">
+        <div class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-3" @mouseleave="handleMouseLeave">
           <!-- 书签项 -->
           <ContextMenu v-for="(bookmark, index) in activeGroupBookmarks" :key="bookmark.id">
             <ContextMenuTrigger>
@@ -270,16 +286,20 @@ function getBookmarkTranslateY(index) {
                     background: 'var(--theme-bg)',
                     border: '1px solid var(--theme-border)'
                   }"
+                  tabindex="0"
+                  role="link"
+                  :aria-label="`打开 ${bookmark.title}`"
                   @click="openBookmark(bookmark.url)"
+                  @keydown="handleBookmarkKeydown($event, bookmark)"
                 >
                   <!-- 图标 -->
                   <div class="w-8 h-8 mb-1 flex items-center justify-center">
                     <img
-                      v-if="getBookmarkIcon(bookmark)"
+                      v-if="getBookmarkIcon(bookmark) && !failedIcons.has(bookmark.id)"
                       :src="getBookmarkIcon(bookmark)"
                       :alt="bookmark.title"
                       class="w-6 h-6 object-contain"
-                      @error="$event.target.style.display = 'none'"
+                      @error="handleIconError(bookmark.id)"
                     />
                     <Globe v-else class="w-6 h-6" style="color: var(--theme-text-muted);" />
                   </div>
